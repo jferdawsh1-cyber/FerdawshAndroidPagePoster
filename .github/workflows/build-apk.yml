@@ -1,0 +1,43 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Android project ZIP
+        run: |
+          unzip Ferdawsh_Android_Page_Poster_Project.zip -d android-project
+          find android-project -maxdepth 4 -type f
+
+      - name: Check Android project
+        run: |
+          if ! find android-project -name gradlew -type f | grep -q .; then
+            echo "Android Gradle project was not found in the ZIP."
+            exit 1
+          fi
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build APK
+        run: |
+          cd "$(dirname "$(find android-project -name gradlew -type f | head -n 1)")"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Ferdawsh-Android-APK
+          path: android-project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
